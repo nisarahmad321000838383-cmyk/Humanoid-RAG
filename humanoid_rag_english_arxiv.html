@@ -1207,6 +1207,16 @@ Output: one short plan only.
             <br><br>
             <strong>Why we mention it:</strong> Because it shows a practical way to reduce wrong answers—by forcing the system to re-check and search again when evidence is weak (evidence = the text or facts found that support the answer).
         </div>
+        <div class="note" id="fn-flare">
+            <strong>Note 15 (FLARE):</strong> FLARE means the system keeps reading and “fills in” missing facts while it is writing the answer.
+            <br>
+            <strong>Simple example:</strong> It starts: “The battery lasts about …” then notices the number is missing, so it searches, finds “10 hours,” and continues: “The battery lasts about 10 hours.”
+        </div>
+        <div class="note" id="fn-compare">
+            <strong>Note 16 (Why FLARE/Self‑RAG Can Be Weaker Here):</strong> FLARE and Self‑RAG are good, but they mostly fix mistakes *after* the answer starts. Our humanoid RAG plans the question first, checks sufficiency, and organizes evidence across documents.
+            <br>
+            <strong>Simple example:</strong> For “Are Android and iOS both mobile OS?”, FLARE/Self‑RAG might answer after seeing one side, then correct later. humanoid RAG splits the question into two checks from the start, so it is less likely to miss a side.
+        </div>
         <div class="note">
             <strong>📚 Foundational References:</strong>
             <p>This research is based on two main arXiv papers:</p>
