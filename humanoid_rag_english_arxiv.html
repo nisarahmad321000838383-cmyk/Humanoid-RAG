@@ -1146,6 +1146,60 @@ print("Best match:", docs[best])
             <br><br>
             <strong>When it struggles (simple):</strong> very long paragraphs, messy punctuation, or mixed topics in one paragraph. Example: “It works great!!! but battery bad?? also camera ok” — the parser may misread the relations and produce a weak answer.
         </div>
+        <div class="note" id="fn-discourse-planning">
+            <strong>Note 13 (Discourse‑Driven Planning):</strong> It means the system decides *how to explain* the answer based on sentence relations (contrast, cause, background). It chooses the order and the transition words.
+            <br>
+            <strong>Simple example:</strong> “This phone is cheap. But it is slow.” The plan is: say the good part first, then use “but” to show the downside.
+            <br>
+            <strong>Another example:</strong> “This laptop is from 2018. So it may be slower today.” The system says the background first, then the conclusion.
+            <br><br>
+            <strong>Simple prompt to the LLM:</strong>
+            <pre style="direction: ltr; text-align: left;">
+Given these facts, create a short answer plan.
+- Put background first, then the main claim.
+- If there is a contrast, use "but".
+- If there is a cause, use "so".
+Facts:
+1) This phone is cheap.
+2) It is slow.
+3) It is from 2018.
+            </pre>
+            <strong>Expected plan (plain):</strong> “This phone is from 2018. It is cheap, but it is slow.”
+            <br><br>
+            <strong>More detailed prompt (advanced):</strong>
+            <pre style="direction: ltr; text-align: left;">
+You are a discourse planner.
+Goal: create an ordered answer plan using BACKGROUND → CLAIM → CONTRAST/CAUSE.
+Rules:
+1) Put BACKGROUND first if present.
+2) If two facts conflict, use "but".
+3) If one fact explains another, use "so".
+4) Keep the plan to 1–2 sentences.
+Facts:
+1) This phone is from 2018. (background)
+2) It is cheap. (claim)
+3) It is slow. (contrast)
+Output: a short plan only.
+            </pre>
+            <strong>Expected plan (advanced):</strong> “This phone is from 2018. It is cheap, but it is slow.”
+            <br><br>
+            <strong>Prompt with all four elements (BACKGROUND → CLAIM → CONTRAST → CAUSE):</strong>
+            <pre style="direction: ltr; text-align: left;">
+You are a discourse planner.
+Goal: produce one short plan in this exact order:
+BACKGROUND → CLAIM → CONTRAST → CAUSE.
+Rules:
+1) Use a single sentence if possible.
+2) Use "but" for CONTRAST and "so" for CAUSE.
+Facts:
+1) This chair is old. (background)
+2) It is cheap. (claim)
+3) It is wobbly. (contrast)
+4) It needs a screw tightened. (cause)
+Output: one short plan only.
+            </pre>
+            <strong>Expected plan (all four):</strong> “This chair is old. It is cheap, but it is wobbly, so it needs a screw tightened.”
+        </div>
         <div class="note">
             <strong>📚 Foundational References:</strong>
             <p>This research is based on two main arXiv papers:</p>
