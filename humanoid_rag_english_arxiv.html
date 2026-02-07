@@ -18,6 +18,7 @@
             background: #ffffff;
             color: #000000;
             font-size: 11pt;
+            position: relative;
         }
         
         /* Paper header - arXiv style */
@@ -232,27 +233,37 @@
             font-weight: bold;
             line-height: 1.3;
         }
+
+        /* Print-only page number */
+        .print-page-number {
+            display: none;
+        }
         
         /* Page numbers - arXiv style */
         @media print {
             body {
                 margin: 0;
-                padding: 2em 1em;
+                padding: 0;
             }
             
             @page {
-                margin: 2cm;
+                size: A4;
+                margin: 20mm 18mm 20mm 18mm;
             }
             
             /* Page number with JavaScript on each printed page */
             .print-page-number {
                 display: block;
-                position: fixed;
-                bottom: 1cm;
+                position: absolute;
                 left: 50%;
                 transform: translateX(-50%);
                 font-size: 10pt;
                 text-align: center;
+                white-space: nowrap;
+                background: #fff;
+                padding: 0 6px;
+                z-index: 9999;
+                pointer-events: none;
             }
         }
         
@@ -299,10 +310,6 @@
     <!-- Page number -->
     <div class="page-number" id="pageNumber">Page 1</div>
     
-    <!-- arXiv Header (optional) -->
-    <div class="arxiv-header">
-        arXiv:XXXX.XXXXX [cs.CL]
-    </div>
     <div class="paper-header">
         <div class="paper-title">
             humanoid RAG: A Discourse-Aware Hierarchical Retrieval-Augmented Generation (RAG) System<br>
@@ -1028,6 +1035,18 @@ class HumanoidRAG:
         <div class="note" id="fn-multilevel">
             <strong>Note 3 (Multi-Level Question Planning):</strong> It means the system first breaks a big question into smaller ones, answers those, then combines them. Simple example: “Can I join a video call?” becomes “Do I have an internet connection?” and “Does my camera and microphone work?” The final answer is built from those sub-answers.
         </div>
+        <div class="note" id="fn-discourse-modeling">
+            <strong>Note 4 (Discourse Modeling):</strong> It means the system looks at how sentences relate (cause, contrast, explanation) instead of treating them as a loose list. Simple example: “The phone was charging. But the battery still dropped.” The word “but” signals a contrast, so the system should not merge the two sentences as the same idea.
+        </div>
+        <div class="note" id="fn-rst">
+            <strong>Note 5 (Rhetorical Structure Trees - RST):</strong> Think of a short text as a small tree: the main idea is the “trunk,” and supporting details are the “branches.” RST labels which sentences are core (nucleus) and which are supporting (satellite). Simple example: “The laptop battery is low. Therefore, it will shut down soon.” The first sentence is the core; the second supports it.
+        </div>
+        <div class="note" id="fn-intersection">
+            <strong>Note 6 (Section-Level RST vs. Inter-Section Graph):</strong> Section-level RST looks *inside* one section to find its core idea and supporting sentences. The inter-section rhetorical graph looks *between* sections to connect them (e.g., one section contradicts or elaborates another). Simple example: Section A says “USB‑C is reversible.” Section B says “Older USB plugs are not reversible.” Inside each section we find the core sentence; across sections we mark the relation as contrast.
+        </div>
+        <div class="note" id="fn-motivation">
+            <strong>Note 7 (Why Single-Step RAG Fails):</strong> It answers too fast with too little. It might find info about Android only, then say “yes” without checking iOS. These questions need two checks and a comparison, not one quick lookup.
+        </div>
         <div class="note">
             <strong>📚 Foundational References:</strong>
             <p>This research is based on two main arXiv papers:</p>
@@ -1073,44 +1092,79 @@ class HumanoidRAG:
             console.log('Total pages: ' + totalPages);
         });
         
-        // Add page numbers for print
-        window.addEventListener('beforeprint', function() {
-            var pageHeight = 1122; // A4 page height
-            var totalHeight = document.body.scrollHeight;
-            var totalPages = Math.ceil(totalHeight / pageHeight);
-            
-            // Remove old numbers
-            var oldNumbers = document.querySelectorAll('.print-page-number');
+        function mmToPx(mm) {
+            var probe = document.createElement('div');
+            probe.style.position = 'absolute';
+            probe.style.visibility = 'hidden';
+            probe.style.height = mm + 'mm';
+            probe.style.width = '1px';
+            document.body.appendChild(probe);
+            var px = probe.getBoundingClientRect().height;
+            document.body.removeChild(probe);
+            return px;
+        }
+
+        function clearPrintNumbers() {
+            var oldNumbers = document.querySelectorAll('.print-page-number.dynamic');
             oldNumbers.forEach(function(el) { el.remove(); });
-            
-            // Add page number to each section
-            var sections = document.querySelectorAll('.section, .abstract-section, .paper-header');
-            var currentPage = 1;
-            
-            sections.forEach(function(section, index) {
-                var sectionTop = section.offsetTop;
-                var pageNum = Math.floor(sectionTop / pageHeight) + 1;
-                
-                if (pageNum !== currentPage) {
-                    currentPage = pageNum;
-                    
-                    // Create page number element
-                    var pageNumberDiv = document.createElement('div');
-                    pageNumberDiv.className = 'print-page-number';
-                    pageNumberDiv.style.position = 'absolute';
-                    pageNumberDiv.style.top = (pageNum * pageHeight - 50) + 'px';
-                    pageNumberDiv.textContent = toEnglishNumber(pageNum);
-                    
-                    document.body.appendChild(pageNumberDiv);
-                }
+        }
+
+        function renderPrintNumbers() {
+            clearPrintNumbers();
+
+            // A4 page height in mm
+            var pageHeightPx = mmToPx(297);
+            if (!pageHeightPx || !isFinite(pageHeightPx)) {
+                return;
+            }
+
+            var totalHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+            var totalPages = Math.max(1, Math.ceil(totalHeight / pageHeightPx));
+            var bottomOffset = mmToPx(10); // keep above bottom margin
+
+            for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+                var pageNumberDiv = document.createElement('div');
+                pageNumberDiv.className = 'print-page-number dynamic';
+                pageNumberDiv.style.position = 'absolute';
+                pageNumberDiv.style.left = '50%';
+                pageNumberDiv.style.transform = 'translateX(-50%)';
+                pageNumberDiv.style.top = (pageNum * pageHeightPx - bottomOffset) + 'px';
+                pageNumberDiv.textContent = 'Page ' + pageNum + ' of ' + totalPages;
+                document.body.appendChild(pageNumberDiv);
+            }
+        }
+
+        function setupPrintListeners() {
+            window.addEventListener('beforeprint', function() {
+                setTimeout(renderPrintNumbers, 0);
             });
-        });
-        
-        // Cleanup after print
-        window.addEventListener('afterprint', function() {
-            var oldNumbers = document.querySelectorAll('.print-page-number');
-            oldNumbers.forEach(function(el) { el.remove(); });
-        });
+            window.addEventListener('afterprint', clearPrintNumbers);
+            window.onbeforeprint = function() { setTimeout(renderPrintNumbers, 0); };
+            window.onafterprint = clearPrintNumbers;
+
+            if (window.matchMedia) {
+                var mediaQueryList = window.matchMedia('print');
+                if (mediaQueryList.addEventListener) {
+                    mediaQueryList.addEventListener('change', function(e) {
+                        if (e.matches) {
+                            setTimeout(renderPrintNumbers, 0);
+                        } else {
+                            clearPrintNumbers();
+                        }
+                    });
+                } else if (mediaQueryList.addListener) {
+                    mediaQueryList.addListener(function(mql) {
+                        if (mql.matches) {
+                            setTimeout(renderPrintNumbers, 0);
+                        } else {
+                            clearPrintNumbers();
+                        }
+                    });
+                }
+            }
+        }
+
+        setupPrintListeners();
     </script>
 
 </body>
