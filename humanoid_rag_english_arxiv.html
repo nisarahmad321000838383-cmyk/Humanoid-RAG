@@ -566,7 +566,8 @@ Emphasized: "Wi-Fi"^2.0 connection
 
         <div class="subsubsection-title">4.2.3 Web Searcher</div>
         <p>
-            The web searcher uses web search APIs (e.g., Bing Search) to access current and broad information.
+            The web searcher uses web search APIs to access current and broad information.
+            In this paper, we use a free API: the DuckDuckGo Instant Answer API.
             This searcher is especially useful for questions that require up-to-date information or information
             outside the local dataset.
         </p>
@@ -852,7 +853,7 @@ Output: response plan P
                     </tr>
                     <tr>
                         <td><strong>Web searcher</strong></td>
-                        <td>Bing Search API, SerpAPI, Google Custom Search</td>
+                        <td>DuckDuckGo Instant Answer API (free)</td>
                     </tr>
                     <tr>
                         <td><strong>Discourse parsing</strong></td>
@@ -1118,6 +1119,13 @@ print("Best match:", docs[best])
             <strong>Common transformer models for this:</strong> <code>all-MiniLM-L6-v2</code>, <code>all-mpnet-base-v2</code>, <code>e5-base</code>, <code>bge-base-en</code>.
             <br>
             <strong>Why these?</strong> They are popular, fast, and give strong results for general semantic search.
+        </div>
+        <div class="note" id="fn-web">
+            <strong>Note 11 (Web Searcher):</strong> This part looks outside your local files and uses the web to get fresh information. Think of it as “asking the internet.”
+            <br>
+            <strong>Simple example:</strong> If you ask “What is the latest version of Python?”, the web searcher can fetch a current answer.
+            <br><br>
+            <strong>Free API we use in this paper:</strong> DuckDuckGo Instant Answer API. It is free to use and good for quick, short facts.
         </div>
         <div class="note">
             <strong>📚 Foundational References:</strong>
