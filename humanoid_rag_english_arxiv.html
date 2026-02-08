@@ -401,20 +401,25 @@
 
         <div class="subsection-title">2.3 Discourse Modeling</div>
         <p>
-            Rhetorical Structure Theory (RST) provides a framework for analyzing text structure. Recent works have used RST to improve summarization and text generation.
-            We apply RST in RAG to identify nucleus information and improve document fusion.
+            Rhetorical Structure Theory (RST) is a simple way to look at how sentences connect. It asks: which sentence is the main point, and which sentences support it?
+            Think of a short text like a tree: the trunk is the main idea, and the branches are extra details.
+            <br><br>
+            <strong>Simple example:</strong> “The battery is low. So the phone will shut down soon.” The first sentence is the main point; the second explains why.
+            <br><br>
+            Recent works use RST to improve summarization and text generation because it helps models focus on the most important sentence instead of noise.
+            We apply RST in RAG to identify the nucleus (core) information and then combine documents more cleanly, so the answer is clearer and less confused.
         </p>
 
         <div class="subsection-title">2.4 Foundational Works</div>
         <p>
-            This research is based on two main arXiv papers:
+            This research is based on two main arXiv papers. In very simple terms, each paper solved one big problem:
         </p>
         <ol>
-            <li><strong>LevelRAG:</strong> a hierarchical Retrieval-Augmented Generation (RAG) approach</li>
-            <li><strong>DiscoRAG:</strong> a discourse-aware Retrieval-Augmented Generation (RAG) approach</li>
+            <li><strong>LevelRAG:</strong> focuses on hierarchy. It breaks a hard question into smaller questions and answers them step by step. Think of it like solving a big task by splitting it into mini‑tasks.</li>
+            <li><strong>DiscoRAG:</strong> focuses on discourse. It looks at how sentences connect (cause, contrast, background) so the final answer is clear and not mixed up.</li>
         </ol>
         <p>
-            humanoid RAG combines and extends these two approaches to create a unified framework.
+            <strong>Why we mention them:</strong> LevelRAG teaches us how to plan in levels, and DiscoRAG teaches us how to organize the information. humanoid RAG combines both ideas, so it can plan the steps and also explain the answer clearly.
         </p>
     </div>
 
@@ -434,9 +439,13 @@
             humanoid RAG consists of a two-level architecture:
         </p>
         <ul>
-            <li><strong>High level (planner):</strong> responsible for question decomposition, summarization, sufficiency verification, and supplementation</li>
-            <li><strong>Low level (searchers):</strong> three parallel searchers: sparse (keyword-based), dense (semantic), and web (internet-based)</li>
+            <li><strong>High level (planner):</strong> the “manager.” It splits a big question into smaller ones, makes short summaries, checks if the info is enough, and asks for more if needed.</li>
+            <li><strong>Low level (searchers):</strong> the “helpers.” They search in three ways at the same time: sparse = keyword search, dense = meaning search, web = internet search.</li>
         </ul>
+        <p>
+            <strong>Simple example:</strong> If the question is “Is this laptop good for video calls?”, the planner breaks it into parts (camera, microphone, internet).
+            Then the searchers look for each part using keywords, meaning, and the web. After that, the planner checks if the answer is complete.
+        </p>
 
         <div class="figure">
             <pre style="text-align: center; font-family: monospace;">
@@ -476,14 +485,14 @@
         <div class="subsection-title">3.3 Workflow</div>
         <p>The humanoid RAG workflow includes the following steps:</p>
         <ol>
-            <li><strong>Decomposition (Decompose):</strong> decompose <em>q</em> into {<em>q</em>₁, ..., <em>q</em>ₙ}</li>
-            <li><strong>Retrieval (Retrieve):</strong> for each <em>qᵢ</em>, retrieve in parallel from three sources</li>
-            <li><strong>Discourse Modeling (Discourse Modeling):</strong> build RST trees and a rhetorical graph</li>
-            <li><strong>Summarization (Summarize):</strong> extract nucleus information from each section</li>
-            <li><strong>Verification (Verify):</strong> check information sufficiency to answer <em>q</em></li>
-            <li><strong>Supplementation (Supplement):</strong> if information is insufficient, generate additional questions</li>
-            <li><strong>Planning (Plan):</strong> create a response plan based on the rhetorical graph</li>
-            <li><strong>Generation (Generate):</strong> generate the final answer <em>a</em></li>
+            <li><strong>Decomposition (Decompose):</strong> break the big question into smaller questions (like a checklist).</li>
+            <li><strong>Retrieval (Retrieve):</strong> for each small question, search in three ways at the same time: keywords, meaning, and the web.</li>
+            <li><strong>Discourse Modeling (Discourse Modeling):</strong> figure out how sentences relate (main point, support, contrast).</li>
+            <li><strong>Summarization (Summarize):</strong> keep only the most important facts from each part.</li>
+            <li><strong>Verification (Verify):</strong> check if we have enough facts to answer the original question.</li>
+            <li><strong>Supplementation (Supplement):</strong> if something is missing, ask one more small question and search again.</li>
+            <li><strong>Planning (Plan):</strong> decide the best order to explain the answer.</li>
+            <li><strong>Generation (Generate):</strong> write the final answer clearly.</li>
         </ol>
     </div>
 
@@ -512,9 +521,59 @@
 
         <div class="subsubsection-title">4.1.2 Summarization Operation</div>
         <p>
-            For each sub-question <em>qᵢ</em> and its retrieved passages, the planner produces a summary
-            <em>sᵢ</em> that extracts key information. This operation uses RST trees to prioritize nucleus sentences.
+            For each sub-question <em>qᵢ</em> and its retrieved passages, the planner produces a short summary
+            <em>sᵢ</em> that keeps only the most important facts. Think of it as “short notes” made from longer text.
+            <br><br>
+            <strong>Simple example:</strong> If the passages say “The laptop has a 1080p camera” and “The microphone is built‑in,” the summary keeps just those two key points.
+            <br><br>
+            This operation uses RST trees to prioritize nucleus sentences (the main points) and drop extra details.
+            <br><br>
+            <strong>Is this only possible with a prompt?</strong> A prompt helps, but not enough on its own. We also do basic preprocessing:
+            we split text into chunks, detect the nucleus/satellite with RST, and then ask the LLM to summarize only the nucleus parts.
+            So it is “prompt + structure,” not just a prompt. Here, “structure” means the organized labels we add (which sentences are nucleus vs. satellite and how chunks relate), so the LLM knows what to keep and what to ignore.
         </p>
+        <p>
+            <strong>How do we do RST in Python (simple):</strong> There is no single built‑in Python library for RST parsing.
+            In practice, people use a pretrained RST parser from research code and call it from Python to label
+            sentences as nucleus/satellite. There is no “one best” parser for everyone, but some of the most commonly used open‑source options in research are:
+            <strong>RSTFinder</strong> (ETS) (https://github.com/EducationalTestingService/rstfinder),
+            <strong>DPLP</strong> (https://github.com/jiyfeng/DPLP), and
+            <strong>IsaNLP RST</strong> (https://pypi.org/project/isanlp-rst/).
+            RSTFinder and DPLP are on GitHub, and IsaNLP RST is available on PyPI (so you can install it with <code>pip</code>).
+            If you don’t have a parser yet, a very simple fallback is to keep the first or most informative sentence as “nucleus.”
+        </p>
+        <div class="definition">
+            <strong>Simple Python Sketch (with comments):</strong>
+            <pre style="direction: ltr; text-align: left;">
+# Example text chunks we retrieved for a sub-question
+chunks = [
+    "The laptop has a 1080p camera. It is light.",
+    "The microphone is built-in. The color is silver."
+]
+
+# Combine chunks into one text (most RST parsers expect full text)
+text = " ".join(chunks)
+
+# Run IsaNLP RST parser (simple idea; API names may vary by version)
+# rst_tree = isanlp_rst.parse(text)
+
+# From the RST tree, keep only nucleus sentences (main points)
+# nucleus = [s.text for s in rst_tree.sentences if s.role == "nucleus"]
+
+# Fallback if parser is not available (keep the most informative sentences)
+nucleus = [
+    "The laptop has a 1080p camera",
+    "The microphone is built-in"
+]
+
+# Join nucleus sentences into a short summary
+summary = ". ".join(nucleus) + "."
+
+# Show the final short summary
+print(summary)
+            </pre>
+            <strong>Expected output:</strong> The laptop has a 1080p camera. The microphone is built-in.
+        </div>
 
         <div class="subsubsection-title">4.1.3 Verification Operation</div>
         <p>
@@ -1216,6 +1275,23 @@ Output: one short plan only.
             <strong>Note 16 (Why FLARE/Self‑RAG Can Be Weaker Here):</strong> FLARE and Self‑RAG are good, but they mostly fix mistakes *after* the answer starts. Our humanoid RAG plans the question first, checks sufficiency, and organizes evidence across documents.
             <br>
             <strong>Simple example:</strong> For “Are Android and iOS both mobile OS?”, FLARE/Self‑RAG might answer after seeing one side, then correct later. humanoid RAG splits the question into two checks from the start, so it is less likely to miss a side.
+        </div>
+        <div class="note" id="fn-ircot-mindsearch">
+            <strong>Note 17 (IRCoT & MindSearch):</strong>
+            <br>
+            <strong>IRCoT (simple):</strong> It breaks a big question into small steps and searches after each step. You can think of it like a checklist.
+            <br>
+            <strong>Example:</strong> “Is City A older than City B?” → Step 1: find City A founding date. Step 2: find City B founding date. Step 3: compare the two dates and answer.
+            <br>
+            <strong>Why it helps:</strong> it avoids guessing too early and makes sure each needed fact is collected.
+            <br>
+            <strong>MindSearch (simple):</strong> It searches in a human‑like way, following hints step by step. It starts broad, then zooms in.
+            <br>
+            <strong>Example:</strong> “Who built the first electric car?” → search “first electric car,” then use the result to search the inventor’s name, then confirm with one more source.
+            <br>
+            <strong>Why it helps:</strong> it follows a trail of clues instead of trying to answer in one jump.
+            <br><br>
+            <strong>Why we mention them:</strong> They are strong baselines for multi‑step search and show the idea of “search‑then‑think‑then‑search.” Our method builds on this idea but adds hierarchical planning and discourse modeling to organize evidence and handle contradictions better.
         </div>
         <div class="note">
             <strong>📚 Foundational References:</strong>
