@@ -622,6 +622,11 @@ Emphasized: "Wi-Fi"^2.0 connection
             the LLM generates a hypothetical document that contains the answer, then the embedding of that
             document is used to retrieve similar real documents.
         </p>
+        <p>
+            <strong>Simple example:</strong> Question: “Which phone has fast battery charging?” The LLM first writes a short fake answer like
+            “This phone supports fast charging and fills the battery in about 30 minutes.” We embed that fake answer and use it to find real documents
+            that talk about fast charging, even if they don’t use the exact same words (because dense search matches meaning, not just keywords).
+        </p>
 
         <div class="subsubsection-title">4.2.3 Web Searcher</div>
         <p>
@@ -630,12 +635,15 @@ Emphasized: "Wi-Fi"^2.0 connection
             This searcher is especially useful for questions that require up-to-date information or information
             outside the local dataset.
         </p>
+        <p>
+            <strong>Limitations (DuckDuckGo, simple):</strong> It often returns short answers instead of full results, coverage can be limited for niche topics, and some queries return no answer.
+        </p>
 
         <div class="subsection-title">4.3 Discourse Modeling</div>
 
         <div class="subsubsection-title">4.3.1 Intra-Section RST Trees</div>
         <p>
-            For each retrieved passage, we build a Rhetorical Structure Theory (RST) tree that represents its
+            For each retrieved passage, we build a Rhetorical Structure Theory (RST) tree (called a “tree” because it shows a hierarchy: main point at the top, supporting sentences below) that represents its
             internal discourse structure. The RST tree splits sentences into nucleus and satellite:
         </p>
         <ul>
